@@ -28,6 +28,7 @@ export default function GameScreen() {
     session,
     lastResponse,
     error,
+    isReady,
     availableMoves,
     visibleNpcs,
     inventoryItems,
@@ -35,12 +36,28 @@ export default function GameScreen() {
     resetSession,
   } = useGameSession();
 
+  if (!isReady || !session) {
+    return (
+      <div style={{ padding: "2rem", maxWidth: "960px", margin: "0 auto" }}>
+        <h1 style={{ marginBottom: "0.25rem" }}>cf_ai_game_master</h1>
+        <p style={{ marginTop: 0, color: "#4b5563" }}>
+          Connecting to GameMasterAgent...
+        </p>
+        {error ? (
+          <p style={{ color: "crimson" }}>
+            <strong>Error:</strong> {error}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
   const currentLocation = session.world.locations[session.player.locationId];
 
   return (
     <div style={{ padding: "2rem", maxWidth: "960px", margin: "0 auto" }}>
       <h1 style={{ marginBottom: "0.25rem" }}>cf_ai_game_master</h1>
-      <p style={{ marginTop: 0, color: "#4b5563" }}>Debug play screen</p>
+      <p style={{ marginTop: 0, color: "#4b5563" }}>Agent-backed debug play screen</p>
 
       <section style={panelStyle}>
         <h2>Player</h2>
@@ -107,36 +124,42 @@ export default function GameScreen() {
       <section style={panelStyle}>
         <h2>Quick Actions</h2>
         <div style={buttonRowStyle}>
-          <button style={buttonStyle} onClick={() => performAction({ type: "inspect" })}>
+          <button
+            style={buttonStyle}
+            onClick={() => void performAction({ type: "inspect" })}
+          >
             Inspect
           </button>
 
-          <button style={buttonStyle} onClick={() => performAction({ type: "rest" })}>
+          <button
+            style={buttonStyle}
+            onClick={() => void performAction({ type: "rest" })}
+          >
             Rest
           </button>
 
           <button
             style={buttonStyle}
-            onClick={() => performAction({ type: "meta", command: "status" })}
+            onClick={() => void performAction({ type: "meta", command: "status" })}
           >
             Status
           </button>
 
           <button
             style={buttonStyle}
-            onClick={() => performAction({ type: "meta", command: "recap" })}
+            onClick={() => void performAction({ type: "meta", command: "recap" })}
           >
             Recap
           </button>
 
           <button
             style={buttonStyle}
-            onClick={() => performAction({ type: "meta", command: "help" })}
+            onClick={() => void performAction({ type: "meta", command: "help" })}
           >
             Help
           </button>
 
-          <button style={buttonStyle} onClick={resetSession}>
+          <button style={buttonStyle} onClick={() => void resetSession()}>
             Reset Session
           </button>
         </div>
@@ -153,7 +176,7 @@ export default function GameScreen() {
                 style={buttonStyle}
                 key={location.id}
                 onClick={() =>
-                  performAction({
+                  void performAction({
                     type: "move",
                     destinationId: location.id,
                   })
@@ -177,7 +200,7 @@ export default function GameScreen() {
                 style={buttonStyle}
                 key={npc.id}
                 onClick={() =>
-                  performAction({
+                  void performAction({
                     type: "talk",
                     targetNpcId: npc.id,
                   })
