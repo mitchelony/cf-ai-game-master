@@ -4,6 +4,7 @@ import type { PlayerArchetype } from "../game/schemas/player";
 import type { TurnResponse } from "../game/schemas/response";
 import type { SessionState } from "../game/schemas/session";
 import { buildSession } from "../game/engine/bootstrap/buildSession";
+import { narrateTurn } from "./tools/narrateTurn";
 import { resolveAction } from "./tools/resolveAction";
 import { saveCheckpoint } from "./tools/saveCheckpoint";
 
@@ -70,12 +71,28 @@ export class GameMasterAgent extends Agent<Env, GameMasterAgentState> {
   }
 
   @callable()
-  runTurn(action: Action): AgentTurnResult {
+  async runTurn(action: Action): Promise<AgentTurnResult> {
     const session = this.ensureSession();
     const result = resolveAction(session, action);
 
     if (!result.ok) {
       return result;
+    }
+
+    let narratedText = result.response.narrativeText;
+
+    try {
+      narratedText = await narrateTurn(this.env, result.session, action, {
+        stateChanges: result.response.stateChanges,
+        summary: result.response.narrativeText,
+        details: {
+          suggestedActions: result.response.suggestedActions.map((suggestedAction) => {
+            return suggestedAction.label;
+          }),
+        },
+      });
+    } catch {
+      // Fall back to deterministic engine text if narration fails.
     }
 
     const savedSession = saveCheckpoint(result.session);
@@ -87,7 +104,10 @@ export class GameMasterAgent extends Agent<Env, GameMasterAgentState> {
     return {
       ok: true,
       session: savedSession,
-      response: result.response,
+      response: {
+        ...result.response,
+        narrativeText: narratedText,
+      },
     };
   }
 
